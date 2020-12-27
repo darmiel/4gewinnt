@@ -25,6 +25,8 @@ const rowObj = [];
 const defaultColor = "#3498db";
 const hoverColor = "#2980b9";
 
+let ended = false;
+
 for (let x = offset; x < width; x += tileWidth + offset) {
   const obj = {
     id: rowObj.length + 1,
@@ -147,7 +149,7 @@ function getWinnerHorizontal() {
   return undefined;
 }
 
-function getWinnerCross() {
+function getWinnerCross1(nobX, nobY) {
   const allNobs = [];
 
   let rowId = 0;
@@ -155,30 +157,92 @@ function getWinnerCross() {
     allNobs[rowId++] = row.nobs;
   }
 
-  const test = allNobs[1][1];
-  const testColor = playerColors[5];
+  const rowNobs = [];
 
-  test.color = testColor;
+  // find starting nobX and nobY
+  let startNobX = nobX;
+  let startNobY = nobY;
 
-  ctx.fillStyle = testColor; // highlight color
-  ctx.fillRect(test.x1, test.y1, tileWidth, tileHeight);
+  while (startNobX > 0 && startNobY < rows - 1) {
+    startNobX--;
+    startNobY++;
+  }
 
-  return undefined;
+  rowNobs.push(allNobs[startNobX][startNobY]);
+  while (startNobX < columns - 1 && startNobY > 0) {
+    startNobX++;
+    startNobY--;
+
+    rowNobs.push(allNobs[startNobX][startNobY]);
+  }
+
+  return check4(rowNobs);
 }
 
-function isWinner() {
-  const winner = getWinnerVertical() ?? getWinnerHorizontal() ?? getWinnerCross();
+function getWinnerCross2(nobX, nobY) {
+  const allNobs = [];
+
+  let rowId = 0;
+  for (const row of rowObj) {
+    allNobs[rowId++] = row.nobs;
+  }
+
+  const rowNobs = [];
+
+  // find starting nobX and nobY
+  let startNobX = nobX;
+  let startNobY = nobY;
+
+  while (startNobX > 0 && startNobY > 0) {
+    startNobX--;
+    startNobY--;
+  }
+
+  rowNobs.push(allNobs[startNobX][startNobY]);
+  while (startNobX < columns - 1 && startNobY < rows - 1) {
+    startNobX++;
+    startNobY++;
+
+    rowNobs.push(allNobs[startNobX][startNobY]);
+  }
+
+  return check4(rowNobs);
+}
+
+function isWinner(nobX, nobY) {
+  const winner =
+    getWinnerVertical() ??
+    getWinnerHorizontal() ??
+    getWinnerCross1(nobX, nobY) ??
+    getWinnerCross2(nobX, nobY);
+
   console.log(winner);
   if (winner != undefined) {
-    alert("Winner:" + winner);
+    ended = true;
+
+    // make all nobs in thaaat color
+    for (const row of rowObj) {
+      for (const nob of row.nobs) {
+        nob.color = winner;
+        ctx.fillStyle = nob.color;
+        ctx.fillRect(nob.x1, nob.y1, tileWidth, tileHeight);
+      }
+    }
   }
 }
 
 // Clickidiclickclack
 /** @param {MouseEvent} event */
 canvas.onmousedown = (event) => {
+  if (ended) {
+    alert("Das Spiel wurde bereits gewonnen du Wurst");
+    return;
+  }
   const x = event.clientX - offset;
+  let nobX = -1;
   for (const row of rowObj) {
+    nobX++;
+
     if (x < row.xStart || x > row.xEnd) {
       continue;
     }
@@ -202,6 +266,14 @@ canvas.onmousedown = (event) => {
       return;
     }
 
+    let nobY = -1;
+    for (const n of row.nobs) {
+      nobY++;
+      if (n == nob) {
+        break;
+      }
+    }
+
     console.log("Found nob:", nob);
 
     const currentPlayer = currentRound % playerCount;
@@ -212,7 +284,9 @@ canvas.onmousedown = (event) => {
     ctx.fillStyle = nob.color;
     ctx.fillRect(nob.x1, nob.y1, tileWidth, tileHeight);
 
-    isWinner();
+    console.log("Clicked nob:", nobX, "|", nobY);
+
+    isWinner(nobX, nobY);
     break;
   }
 };

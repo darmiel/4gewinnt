@@ -247,9 +247,6 @@ canvas.onmousedown = (event) => {
       continue;
     }
 
-    // row found
-    currentRound++;
-
     // get most bottom nob from column
     let nob = undefined;
     for (const n of row.nobs) {
@@ -265,6 +262,9 @@ canvas.onmousedown = (event) => {
       alert("Spalte is voll du Depp!");
       return;
     }
+    
+    // row found
+    currentRound++;
 
     let nobY = -1;
     for (const n of row.nobs) {
